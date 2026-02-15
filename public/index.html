@@ -11,36 +11,73 @@ button { padding: 10px; background:#2563eb; color:white; border:none; }
 </head>
 <body>
 
-<h2>Singma Chat 26 </h2>
+<h2>Hunter Private Chat 🔒</h2>
 
-<div id="messages"></div>
+<div id="joinSection">
+    <input id="username" placeholder="Your name">
+    <input id="room" placeholder="Room code">
+    <button onclick="joinRoom()">Join Room</button>
+</div>
 
-<input id="username" placeholder="Your name">
-<br><br>
-<input id="input" placeholder="Type message">
-<button onclick="sendMessage()">Send</button>
+<div id="chatSection" style="display:none;">
+    <h3 id="roomTitle"></h3>
+    <div id="messages" style="height:300px;overflow-y:scroll;border:1px solid #333;padding:10px;margin:20px;"></div>
+    <input id="input" placeholder="Type message">
+    <button onclick="sendMessage()">Send</button>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-const messages = document.getElementById("messages");
+let currentRoom = "";
+
+function joinRoom() {
+    const username = document.getElementById("username").value.trim();
+    const room = document.getElementById("room").value.trim();
+
+    if (username === "" || room === "") return;
+
+    currentRoom = room;
+
+    socket.emit("join room", room);
+
+    document.getElementById("joinSection").style.display = "none";
+    document.getElementById("chatSection").style.display = "block";
+    document.getElementById("roomTitle").innerText = "Room: " + room;
+
+    localStorage.setItem("chatUsername", username);
+    localStorage.setItem("chatRoom", room);
+}
 
 function sendMessage() {
-    const username = document.getElementById("username").value;
+    const username = localStorage.getItem("chatUsername");
     const input = document.getElementById("input");
+    const message = input.value.trim();
 
-    if(input.value.trim() === "") return;
+    if (message === "") return;
 
-    socket.emit("chat message", username + ": " + input.value);
+    socket.emit("chat message", username + ": " + message);
     input.value = "";
 }
 
 socket.on("chat message", function(msg) {
     const item = document.createElement("div");
     item.textContent = msg;
-    messages.appendChild(item);
+    document.getElementById("messages").appendChild(item);
 });
+
+window.onload = function() {
+    const savedName = localStorage.getItem("chatUsername");
+    const savedRoom = localStorage.getItem("chatRoom");
+
+    if (savedName && savedRoom) {
+        document.getElementById("username").value = savedName;
+        document.getElementById("room").value = savedRoom;
+    }
+}
 </script>
 
 </body>
+
 </html>
+
