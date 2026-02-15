@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sigma Chat</title>
+<style>
+body { font-family: Arial; background: #0f172a; color: white; text-align:center; }
+#messages { height: 300px; overflow-y: scroll; border: 1px solid #333; padding: 10px; margin:20px;}
+input { padding: 10px; width: 60%; }
+button { padding: 10px; background:#2563eb; color:white; border:none; }
+</style>
+</head>
+<body>
+
+<h2>Singma Chat 26 </h2>
+
+<div id="messages"></div>
+
+<input id="username" placeholder="Your name">
+<br><br>
+<input id="input" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const messages = document.getElementById("messages");
+const usernameInput = document.getElementById("username");
+const messageInput = document.getElementById("input");
+
+// ✅ Load saved name when page opens
+window.onload = function() {
+    const savedName = localStorage.getItem("chatUsername");
+    if (savedName) {
+        usernameInput.value = savedName;
+    }
+}
+
+// ✅ Save name automatically when they type it
+usernameInput.addEventListener("input", function() {
+    localStorage.setItem("chatUsername", usernameInput.value);
+});
+
+function sendMessage() {
+    const username = usernameInput.value.trim();
+    const message = messageInput.value.trim();
+
+    if (username === "" || message === "") return;
+
+    socket.emit("chat message", username + ": " + message);
+    messageInput.value = "";
+}
+
+socket.on("chat message", function(msg) {
+    const item = document.createElement("div");
+    item.textContent = msg;
+    messages.appendChild(item);
+});
+</script>
+
+
+</body>
+</html>
