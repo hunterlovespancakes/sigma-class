@@ -27,9 +27,15 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("chat message", (msg) => {
-        io.to(socket.room).emit("chat message", msg);
-    });
+   socket.on("chat message", (msg) => {
+    const messageData = {
+        text: msg,
+        user: socket.username,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    io.to(socket.room).emit("chat message", messageData);
+});
 
     socket.on("kick user", (id) => {
         if (socket.room === ADMIN_CODE) {
@@ -50,4 +56,5 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log("Server running on port " + PORT);
 });
+
 
