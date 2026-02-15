@@ -5,7 +5,7 @@ const io = require("socket.io")(http);
 
 app.use(express.static("public"));
 
-const ADMIN_CODE = "SUPERADMIN123";
+const ADMIN_CODE = "huntercanrizzu";
 let users = {};
 
 io.on("connection", (socket) => {
@@ -50,3 +50,4 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log("Server running on port " + PORT);
 });
+
