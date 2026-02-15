@@ -29,56 +29,68 @@ button { padding: 10px; background:#2563eb; color:white; border:none; }
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-let currentRoom = "";
+let isAdmin = false;
 
 function joinRoom() {
     const username = document.getElementById("username").value.trim();
     const room = document.getElementById("room").value.trim();
 
-    if (username === "" || room === "") return;
+    if (!username || !room) return;
 
-    currentRoom = room;
-
-    socket.emit("join room", room);
+    socket.emit("join room", { username, room });
 
     document.getElementById("joinSection").style.display = "none";
     document.getElementById("chatSection").style.display = "block";
-    document.getElementById("roomTitle").innerText = "Room: " + room;
-
-    localStorage.setItem("chatUsername", username);
-    localStorage.setItem("chatRoom", room);
 }
 
 function sendMessage() {
-    const username = localStorage.getItem("chatUsername");
     const input = document.getElementById("input");
-    const message = input.value.trim();
+    if (!input.value.trim()) return;
 
-    if (message === "") return;
-
-    socket.emit("chat message", username + ": " + message);
+    socket.emit("chat message", input.value);
     input.value = "";
 }
 
 socket.on("chat message", function(msg) {
-    const item = document.createElement("div");
-    item.textContent = msg;
-    document.getElementById("messages").appendChild(item);
+    const div = document.createElement("div");
+    div.textContent = msg;
+    document.getElementById("messages").appendChild(div);
 });
 
-window.onload = function() {
-    const savedName = localStorage.getItem("chatUsername");
-    const savedRoom = localStorage.getItem("chatRoom");
+socket.on("admin", function() {
+    isAdmin = true;
+    const adminPanel = document.createElement("div");
+    adminPanel.innerHTML = "<h3>ADMIN PANEL</h3><div id='userList'></div>";
+    document.body.appendChild(adminPanel);
+});
 
-    if (savedName && savedRoom) {
-        document.getElementById("username").value = savedName;
-        document.getElementById("room").value = savedRoom;
+socket.on("user list", function(users) {
+    if (!isAdmin) return;
+
+    const userList = document.getElementById("userList");
+    userList.innerHTML = "";
+
+    for (let id in users) {
+        const div = document.createElement("div");
+        div.innerHTML = users[id] + " <button onclick=\"kickUser('${id}')\">Kick</button>";
+        userList.appendChild(div);
     }
+});
+
+function kickUser(id) {
+    socket.emit("kick user", id);
 }
+
+socket.on("kicked", function() {
+    alert("You were kicked by admin.");
+    window.location.reload();
+});
 </script>
+
 
 </body>
 
 </html>
+
 
 
