@@ -225,18 +225,19 @@ function sendMessage() {
     input.value = "";
 }
 
-socket.on("chat message", (msg) => {
+let username = "";
 
-  const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function joinRoom() {
+    username = document.getElementById("username").value.trim();
+    const room = document.getElementById("room").value.trim();
+    if (!username || !room) return;
 
-  io.emit("chat message", {
-    name: socket.username,
-    message: msg,
-    time: time
-  });
+    socket.emit("join room", { username, room });
 
-});
+    document.getElementById("joinSection").style.display = "none";
+    document.getElementById("chatApp").style.display = "flex";
+    document.getElementById("roomTitle").innerText = "Room: " + room;
+}
 
 
 
@@ -279,6 +280,7 @@ socket.on("kicked", function() {
 
 </body>
 </html>
+
 
 
 
