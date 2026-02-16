@@ -225,25 +225,19 @@ function sendMessage() {
     input.value = "";
 }
 
-socket.on("chat message", (data) => {
-  const messageDiv = document.createElement("div");
+socket.on("chat message", (msg) => {
 
-  messageDiv.classList.add("message");
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  if (data.name === username) {
-    messageDiv.classList.add("my-message");
-  } else {
-    messageDiv.classList.add("other-message");
-  }
+  io.emit("chat message", {
+    name: socket.username,
+    message: msg,
+    time: time
+  });
 
-  messageDiv.innerHTML = `
-    <strong>${data.name}</strong>
-    <span class="time">${data.time}</span>
-    <p>${data.message}</p>
-  `;
-
-  document.getElementById("messages").appendChild(messageDiv);
 });
+
 
 
 socket.on("admin", function() {
@@ -285,5 +279,6 @@ socket.on("kicked", function() {
 
 </body>
 </html>
+
 
 
