@@ -5,14 +5,14 @@ const io = require("socket.io")(http);
 
 app.use(express.static("public"));
 
-const ADMIN_CODE = "huntercanrizzu";
-let users = {};
+const ADMIN_CODE = "huntercanrizzu"; // change this to your secret admin code
+
+let users = {}; // stores socket.id -> username
 
 io.on("connection", (socket) => {
 
-    socket.on("join room", (data) => {
-        const { username, room } = data;
-
+    // When user joins a room
+    socket.on("join room", ({ username, room }) => {
         socket.username = username;
         socket.room = room;
 
@@ -20,41 +20,72 @@ io.on("connection", (socket) => {
 
         users[socket.id] = username;
 
-        io.to(room).emit("user list", users);
+        // Send updated user list to that room only
+        io.to(room).emit("user list", getRoomUsers(room));
 
+        // If they joined admin room, give admin powers
         if (room === ADMIN_CODE) {
             socket.emit("admin");
         }
     });
 
-   socket.on("chat message", (msg) => {
-    const messageData = {
-        text: msg,
-        user: socket.username,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    // When a message is sent
+    socket.on("chat message", (text) => {
+        if (!socket.room || !socket.username) return;
 
-    io.to(socket.room).emit("chat message", messageData);
-});
+        const messageData = {
+            user: socket.username,
+            text: text,
+            time: new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+        };
 
+        io.to(socket.room).emit("chat message", messageData);
+    });
+
+    // Admin kicking someone
     socket.on("kick user", (id) => {
         if (socket.room === ADMIN_CODE) {
-            io.to(id).emit("kicked");
-            io.sockets.sockets.get(id)?.disconnect();
+            const targetSocket = io.sockets.sockets.get(id);
+            if (targetSocket) {
+                targetSocket.emit("kicked");
+                targetSocket.disconnect();
+            }
         }
     });
 
+    // When user disconnects
     socket.on("disconnect", () => {
+        const room = socket.room;
         delete users[socket.id];
-        io.emit("user list", users);
+
+        if (room) {
+            io.to(room).emit("user list", getRoomUsers(room));
+        }
     });
 
 });
+
+// Helper function to get only users in a room
+function getRoomUsers(room) {
+    const roomSockets = io.sockets.adapter.rooms.get(room);
+    let roomUsers = {};
+
+    if (roomSockets) {
+        roomSockets.forEach(id => {
+            if (users[id]) {
+                roomUsers[id] = users[id];
+            }
+        });
+    }
+
+    return roomUsers;
+}
 
 const PORT = process.env.PORT || 3000;
 
 http.listen(PORT, () => {
-    console.log("Server running on port " + PORT);
+    console.log("Sigma Class server running on port " + PORT);
 });
-
-
