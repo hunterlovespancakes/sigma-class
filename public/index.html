@@ -134,6 +134,39 @@ button:hover {
     width: 80%;
     margin: 10px 0;
 }
+    #messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 60%;
+  padding: 10px;
+  border-radius: 12px;
+  font-family: Arial;
+  position: relative;
+}
+
+.my-message {
+  align-self: flex-end;
+  background-color: #4CAF50;
+  color: white;
+  text-align: right;
+}
+
+.other-message {
+  align-self: flex-start;
+  background-color: #f1f1f1;
+  color: black;
+}
+
+.time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  display: block;
+}
+
 </style>
 </head>
 
@@ -141,7 +174,7 @@ button:hover {
 
 <div id="joinSection" class="join-screen">
     <h2 style="font-size:32px; letter-spacing:2px;">SIGMA CLASS</h2>
-    <p style="opacity:0.6;">Private Secure Chat</p>
+    <p style="opacity:0.6;">r u sigma </p>
     <input id="username" placeholder="Your Name"><br>
     <input id="room" placeholder="Room Code"><br>
     <button onclick="joinRoom()">Join</button>
@@ -192,19 +225,26 @@ function sendMessage() {
     input.value = "";
 }
 
-socket.on("chat message", function(data) {
-    const div = document.createElement("div");
-    div.className = "message";
-    div.innerHTML = `
-        <div style="font-size:12px; opacity:0.7;">
-            ${data.user} • ${data.time}
-        </div>
-        <div>${data.text}</div>
-    `;
-    const messages = document.getElementById("messages");
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+socket.on("chat message", (data) => {
+  const messageDiv = document.createElement("div");
+
+  messageDiv.classList.add("message");
+
+  if (data.name === username) {
+    messageDiv.classList.add("my-message");
+  } else {
+    messageDiv.classList.add("other-message");
+  }
+
+  messageDiv.innerHTML = `
+    <strong>${data.name}</strong>
+    <span class="time">${data.time}</span>
+    <p>${data.message}</p>
+  `;
+
+  document.getElementById("messages").appendChild(messageDiv);
 });
+
 
 socket.on("admin", function() {
     isAdmin = true;
@@ -245,3 +285,4 @@ socket.on("kicked", function() {
 
 </body>
 </html>
+
