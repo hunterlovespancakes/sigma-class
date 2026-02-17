@@ -54,6 +54,14 @@ socket.on("admin login", (password) => {
     // Send updated user list
     io.to(room).emit("user list", rooms[room].users);
   });
+    
+    socket.on("admin kick", (id) => {
+    if (socket.id === adminSocket) {
+        io.to(id).emit("kicked");
+        io.sockets.sockets.get(id)?.disconnect();
+    }
+});
+
 
 
  
@@ -139,6 +147,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
 
