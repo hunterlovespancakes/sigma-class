@@ -65,6 +65,23 @@ socket.on("chat message", (msg) => {
     minute: '2-digit' 
   });
 
+  const messageData = {
+      name: socket.username,
+      message: msg,
+      time: time,
+      room: socket.room
+  };
+
+  io.to(socket.room).emit("chat message", messageData);
+
+  // 👑 ALSO SEND TO ADMIN
+  if (adminSocket) {
+      io.to(adminSocket).emit("admin message", messageData);
+  }
+
+});
+
+
   io.to(socket.room).emit("chat message", {
     name: socket.username,
     message: msg,
@@ -122,5 +139,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
