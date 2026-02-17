@@ -1,3 +1,4 @@
+const ADMIN_PASSWORD = "huntercanrizzu"; // change this to something secret
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -17,7 +18,18 @@ let rooms = {};
 //   }
 // }
 
-io.on("connection", (socket) => {
+io.on("connection"), (socket) => {
+let adminSocket = null;
+
+socket.on("admin login", (password) => {
+    if (password === ADMIN_PASSWORD) {
+        adminSocket = socket.id;
+        socket.emit("admin success");
+        socket.emit("all rooms", rooms);
+    } else {
+        socket.emit("admin fail");
+    }
+});
 
   socket.on("join room", ({ username, room }) => {
 
@@ -110,4 +122,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
