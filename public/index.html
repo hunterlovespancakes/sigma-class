@@ -203,43 +203,52 @@ button:hover {
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+
+let username = "";
+let currentRoom = "";
 let isAdmin = false;
 
 function joinRoom() {
-    const username = document.getElementById("username").value.trim();
-    const room = document.getElementById("room").value.trim();
-    if (!username || !room) return;
+    username = document.getElementById("username").value.trim();
+    currentRoom = document.getElementById("room").value.trim();
 
-    socket.emit("join room", { username, room });
+    if (!username || !currentRoom) return;
+
+    socket.emit("join room", { username, room: currentRoom });
 
     document.getElementById("joinSection").style.display = "none";
     document.getElementById("chatApp").style.display = "flex";
-    document.getElementById("roomTitle").innerText = "Room: " + room;
+    document.getElementById("roomTitle").innerText = "Room: " + currentRoom;
 }
 
 function sendMessage() {
     const input = document.getElementById("input");
+
     if (!input.value.trim()) return;
 
     socket.emit("chat message", input.value);
     input.value = "";
 }
 
-let username = "";
+socket.on("chat message", (data) => {
+    const messageDiv = document.createElement("div");
 
-function joinRoom() {
-    username = document.getElementById("username").value.trim();
-    const room = document.getElementById("room").value.trim();
-    if (!username || !room) return;
+    messageDiv.classList.add("message");
 
-    socket.emit("join room", { username, room });
+    if (data.name === username) {
+        messageDiv.classList.add("my-message");
+    } else {
+        messageDiv.classList.add("other-message");
+    }
 
-    document.getElementById("joinSection").style.display = "none";
-    document.getElementById("chatApp").style.display = "flex";
-    document.getElementById("roomTitle").innerText = "Room: " + room;
-}
+    messageDiv.innerHTML = `
+        <strong>${data.name}</strong>
+        <span class="time">${data.time || ""}</span>
+        <div>${data.message}</div>
+    `;
 
-
+    document.getElementById("messages").appendChild(messageDiv);
+});
 
 socket.on("admin", function() {
     isAdmin = true;
@@ -280,6 +289,7 @@ socket.on("kicked", function() {
 
 </body>
 </html>
+
 
 
 
