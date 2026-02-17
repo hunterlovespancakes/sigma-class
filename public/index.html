@@ -1,296 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Sigma Class</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Sigma Chat</title>
 <style>
-body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-/* Glass container */
-.container {
-    width: 900px;
-    height: 600px;
-    background: rgba(30, 41, 59, 0.85);
-    backdrop-filter: blur(15px);
-    border-radius: 20px;
-    display: flex;
-    box-shadow: 0 0 50px rgba(0,0,0,0.6);
-    overflow: hidden;
-}
-
-/* Sidebar */
-.sidebar {
-    width: 250px;
-    background: #0f172a;
-    padding: 20px;
-    border-right: 1px solid #334155;
-}
-
-.user {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 8px 0;
-    padding: 8px;
-    background: #1e293b;
-    border-radius: 8px;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-}
-
-.status-dot {
-    width: 10px;
-    height: 10px;
-    background: #22c55e;
-    border-radius: 50%;
-    margin-right: 8px;
-    box-shadow: 0 0 8px #22c55e;
-}
-
-/* Chat area */
-.chat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.chat-header {
-    padding: 15px;
-    background: #0f172a;
-    border-bottom: 1px solid #334155;
-}
-
-.messages {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-}
-
-/* Message animation */
-@keyframes popIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.message {
-    margin-bottom: 10px;
-    padding: 10px 15px;
-    background: #2563eb;
-    border-radius: 15px;
-    width: fit-content;
-    max-width: 70%;
-    animation: popIn 0.2s ease-out;
-}
-
-/* Input area */
-.input-area {
-    display: flex;
-    padding: 15px;
-    background: #0f172a;
-}
-
-input {
-    flex: 1;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-}
-
-button {
-    margin-left: 10px;
-    padding: 10px 15px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(37,99,235,0.4);
-}
-
-.join-screen {
-    text-align: center;
-}
-
-.join-screen input {
-    width: 80%;
-    margin: 10px 0;
-}
-    #messages {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.message {
-  max-width: 60%;
-  padding: 10px;
-  border-radius: 12px;
-  font-family: Arial;
-  position: relative;
-}
-
-.my-message {
-  align-self: flex-end;
-  background-color: #4CAF50;
-  color: white;
-  text-align: right;
-}
-
-.other-message {
-  align-self: flex-start;
-  background-color: #f1f1f1;
-  color: black;
-}
-
-.time {
-  font-size: 0.7rem;
-  opacity: 0.7;
-  display: block;
-}
-
+body { font-family: Arial; background: #0f172a; color: white; text-align:center; }
+#messages { height: 300px; overflow-y: scroll; border: 1px solid #333; padding: 10px; margin:20px;}
+input { padding: 10px; width: 60%; }
+button { padding: 10px; background:#2563eb; color:white; border:none; }
 </style>
 </head>
-
 <body>
 
-<div id="joinSection" class="join-screen">
-    <h2 style="font-size:32px; letter-spacing:2px;">SIGMA CLASS</h2>
-    <p style="opacity:0.6;">r u sigma </p>
-    <input id="username" placeholder="Your Name"><br>
-    <input id="room" placeholder="Room Code"><br>
-    <button onclick="joinRoom()">Join</button>
-</div>
+<h2>Singma Chat 26 </h2>
 
-<div id="chatApp" class="container" style="display:none;">
-    <div class="sidebar">
-        <h3>Online</h3>
-        <div id="userList"></div>
-    </div>
+<div id="messages"></div>
 
-    <div class="chat">
-        <div class="chat-header">
-            <h3 id="roomTitle">Room</h3>
-        </div>
-
-        <div id="messages" class="messages"></div>
-
-        <div class="input-area">
-            <input id="input" placeholder="Type a message">
-            <button onclick="sendMessage()">Send</button>
-        </div>
-    </div>
-</div>
+<input id="username" placeholder="Your name">
+<br><br>
+<input id="input" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-
-let username = "";
-let currentRoom = "";
-let isAdmin = false;
-
-function joinRoom() {
-    username = document.getElementById("username").value.trim();
-    currentRoom = document.getElementById("room").value.trim();
-
-    if (!username || !currentRoom) return;
-
-    socket.emit("join room", { username, room: currentRoom });
-
-    document.getElementById("joinSection").style.display = "none";
-    document.getElementById("chatApp").style.display = "flex";
-    document.getElementById("roomTitle").innerText = "Room: " + currentRoom;
-}
+const messages = document.getElementById("messages");
 
 function sendMessage() {
+    const username = document.getElementById("username").value;
     const input = document.getElementById("input");
 
-    if (!input.value.trim()) return;
+    if(input.value.trim() === "") return;
 
-    socket.emit("chat message", input.value);
+    socket.emit("chat message", username + ": " + input.value);
     input.value = "";
 }
 
-socket.on("chat message", (data) => {
-    const messageDiv = document.createElement("div");
-
-    messageDiv.classList.add("message");
-
-    if (data.name === username) {
-        messageDiv.classList.add("my-message");
-    } else {
-        messageDiv.classList.add("other-message");
-    }
-
-    messageDiv.innerHTML = `
-        <strong>${data.name}</strong>
-        <span class="time">${data.time || ""}</span>
-        <div>${data.message}</div>
-    `;
-
-    document.getElementById("messages").appendChild(messageDiv);
-});
-
-socket.on("admin", function() {
-    isAdmin = true;
-});
-
-socket.on("user list", function(users) {
-    const userList = document.getElementById("userList");
-    userList.innerHTML = "";
-
-    for (let id in users) {
-        const div = document.createElement("div");
-        div.className = "user";
-
-        div.innerHTML = `
-            <div class="user-info">
-                <div class="status-dot"></div>
-                ${users[id]}
-            </div>
-        `;
-
-        if (isAdmin) {
-            div.innerHTML += `<button onclick="kickUser('${id}')">Kick</button>`;
-        }
-
-        userList.appendChild(div);
-    }
-});
-
-function kickUser(id) {
-    socket.emit("kick user", id);
-}
-
-socket.on("kicked", function() {
-    alert("You were kicked by admin.");
-    window.location.reload();
+socket.on("chat message", function(msg) {
+    const item = document.createElement("div");
+    item.textContent = msg;
+    messages.appendChild(item);
 });
 </script>
 
 </body>
 </html>
-
-
-
-
-
