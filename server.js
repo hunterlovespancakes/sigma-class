@@ -44,20 +44,24 @@ io.on("connection", (socket) => {
   });
 
 
-  socket.on("chat message", (msg) => {
+ 
+socket.on("chat message", (msg) => {
 
-    if (!socket.room) return;
-
-    const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    io.to(socket.room).emit("chat message", {
-      name: socket.username,
-      message: msg,
-      time: time
-    });
-
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
   });
+
+  io.to(socket.room).emit("chat message", {
+    name: socket.username,
+    message: msg,
+    time: time
+  });
+
+});
+
+
 
 
   socket.on("kick user", (id) => {
@@ -106,3 +110,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
