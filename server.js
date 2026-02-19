@@ -1,153 +1,108 @@
-const ADMIN_PASSWORD = "huntercanrizzu"; // change this to something secret
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
+const socketIo = require("socket.io");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
-app.use(express.static("public"));
+const PORT = process.env.PORT || 8080;
 
-let rooms = {}; 
-// Structure:
-// rooms = {
-//   roomName: {
-//     users: { socketId: username },
-//     admin: socketId
-//   }
-// }
+// Serve public folder
+app.use(express.static(path.join(__dirname, "public")));
 
-io.on("connection"), (socket) => {
-let adminSocket = null;
+// ===== SETTINGS =====
 
-socket.on("admin login", (password) => {
-    if (password === ADMIN_PASSWORD) {
-        adminSocket = socket.id;
-        socket.emit("admin success");
-        socket.emit("all rooms", rooms);
-    } else {
-        socket.emit("admin fail");
-    }
-});
+const ADMIN_NAME = "Mr.Matthews"; // change if needed
 
-  socket.on("join room", ({ username, room }) => {
+const allowedRooms = ["math", "science", "reading", "history"];
+
+const bannedWords = ["discord", "snapchat", "badword"];
+
+let users = {};
+let messageLog = [];
+
+// ===== WORD FILTER =====
+function filterMessage(msg) {
+  let clean = msg;
+  bannedWords.forEach(word => {
+    const regex = new RegExp(word, "gi");
+    clean = clean.replace(regex, "***");
+  });
+  return clean;
+}
+
+// ===== SOCKET CONNECTION =====
+io.on("connection", (socket) => {
+
+  console.log("New user connected:", socket.id);
+
+  // Join Room
+  socket.on("joinRoom", ({ username, room }) => {
+
+    if (!username || username.length < 3) return;
+    if (!allowedRooms.includes(room)) return;
+
+    users[socket.id] = {
+      username,
+      room,
+      isAdmin: username === ADMIN_NAME
+    };
 
     socket.join(room);
-    socket.username = username;
-    socket.room = room;
 
-    if (!rooms[room]) {
-      rooms[room] = {
-        users: {},
-        admin: socket.id
-      };
+    if (username === ADMIN_NAME) {
+      io.to(room).emit("chatMessage", {
+        user: "SYSTEM",
+        message: `${ADMIN_NAME} (Moderator) is now online.`
+      });
     }
 
-    rooms[room].users[socket.id] = username;
-
-    // Tell first person they are admin
-    if (rooms[room].admin === socket.id) {
-      socket.emit("admin");
-    }
-
-    // Send updated user list
-    io.to(room).emit("user list", rooms[room].users);
-  });
-    
-    socket.on("admin kick", (id) => {
-    if (socket.id === adminSocket) {
-        io.to(id).emit("kicked");
-        io.sockets.sockets.get(id)?.disconnect();
-    }
-});
-
-
-
- 
-socket.on("chat message", (msg) => {
-
-  const now = new Date();
-  const time = now.toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+    console.log(username + " joined " + room);
   });
 
-  const messageData = {
-      name: socket.username,
-      message: msg,
-      time: time,
-      room: socket.room
-  };
+  // Chat Message
+  socket.on("chatMessage", (data) => {
 
-  io.to(socket.room).emit("chat message", messageData);
+    const user = users[socket.id];
+    if (!user) return;
 
-  // 👑 ALSO SEND TO ADMIN
-  if (adminSocket) {
-      io.to(adminSocket).emit("admin message", messageData);
-  }
+    let message = filterMessage(data.message);
 
-});
+    const messageData = {
+      user: user.username,
+      message: message,
+      room: user.room,
+      time: new Date().toLocaleTimeString()
+    };
 
+    messageLog.push(messageData);
 
-  io.to(socket.room).emit("chat message", {
-    name: socket.username,
-    message: msg,
-    time: time
+    io.to(user.room).emit("chatMessage", messageData);
   });
 
-});
+  // Report Message
+  socket.on("reportMessage", (id) => {
 
+    const user = users[socket.id];
+    if (!user) return;
 
+    console.log("Message reported by:", user.username, "Message ID:", id);
 
-
-  socket.on("kick user", (id) => {
-
-    if (!socket.room) return;
-
-    const room = socket.room;
-
-    if (rooms[room] && rooms[room].admin === socket.id) {
-      io.to(id).emit("kicked");
-      io.sockets.sockets.get(id)?.disconnect();
-    }
+    // Notify admin if online
+    Object.keys(users).forEach(id => {
+      if (users[id].isAdmin) {
+        io.to(id).emit("chatMessage", {
+          user: "SYSTEM",
+          message: "A message has been reported."
+        });
+      }
+    });
 
   });
 
-
+  // Disconnect
   socket.on("disconnect", () => {
 
-    const room = socket.room;
-    if (!room || !rooms[room]) return;
-
-    delete rooms[room].users[socket.id];
-
-    // If admin leaves, make someone else admin
-    if (rooms[room].admin === socket.id) {
-      const users = Object.keys(rooms[room].users);
-      if (users.length > 0) {
-        rooms[room].admin = users[0];
-        io.to(users[0]).emit("admin");
-      }
-    }
-
-    io.to(room).emit("user list", rooms[room].users);
-
-    // If room empty, delete it
-    if (Object.keys(rooms[room].users).length === 0) {
-      delete rooms[room];
-    }
-
-  });
-
-});
-
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
-
-
-
-
+    cons
