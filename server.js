@@ -9,6 +9,10 @@ const io = socketIo(server);
 
 const PORT = process.env.PORT || 8080;
 
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 // Serve public folder
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -106,3 +110,4 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
 
     cons
+
