@@ -11,8 +11,58 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 10000;
 
+let users = {};
+
+const blockedWords = [
+  "discord","snapchat","tiktok","instagram",
+  "badword","hack","bypass","proxy"
+];
+
+function filterMessage(msg) {
+  blockedWords.forEach(word => {
+    const regex = new RegExp(word, "gi");
+    msg = msg.replace(regex, "***");
+  });
+  return msg;
+}
+
 io.on("connection", (socket) => {
-  console.log("User connected");
+
+  socket.on("joinRoom", ({ username, room }) => {
+    users[socket.id] = { username, room };
+    socket.join(room);
+
+    updateUserList(room);
+  });
+
+  socket.on("chatMessage", (msg) => {
+    const user = users[socket.id];
+    if (!user) return;
+
+    msg = filterMessage(msg);
+
+    io.to(user.room).emit("chatMessage", {
+      user: user.username,
+      message: msg
+    });
+  });
+
+  socket.on("disconnect", () => {
+    const user = users[socket.id];
+    if (user) {
+      delete users[socket.id];
+      updateUserList(user.room);
+    }
+  });
+
+  function updateUserList(room) {
+    const roomUsers = Object.values(users)
+      .filter(u => u.room === room)
+      .map(u => u.username);
+
+    io.to(room).emit("updateUsers", roomUsers);
+  }
+
 });
 
 server.listen(PORT, "0.0.0.0", () => {
