@@ -2,15 +2,26 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// 🛡 Security Headers
+app.use(helmet());
+
+// 🛑 Rate Limiting (100 requests per 15 min per IP)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+app.use(limiter);
+
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 10000;
-
 let users = {};
 
 const blockedWords = [
@@ -68,3 +79,4 @@ io.on("connection", (socket) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });
+
