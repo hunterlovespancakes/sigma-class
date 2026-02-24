@@ -24,17 +24,22 @@ app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 10000;
 let users = {};
 
-const blockedWords = [
-  "discord","snapchat","tiktok","instagram",
-  "badword","hack","bypass","proxy"
-];
-
 function filterMessage(msg) {
+  if (!msg || typeof msg !== "string") return "";
+
+  const blockedWords = [
+    "discord","snapchat","tiktok","instagram",
+    "hack","proxy","bypass"
+  ];
+
+  let cleaned = msg;
+
   blockedWords.forEach(word => {
-    const regex = new RegExp(word, "gi");
-    msg = msg.replace(regex, "***");
+    const regex = new RegExp(`\\b${word}\\b`, "gi");
+    cleaned = cleaned.replace(regex, "***");
   });
-  return msg;
+
+  return cleaned.substring(0, 300); // limit message length
 }
 
 io.on("connection", (socket) => {
@@ -79,4 +84,5 @@ io.on("connection", (socket) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });
+
 
